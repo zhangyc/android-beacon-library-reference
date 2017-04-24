@@ -30,14 +30,13 @@ public class MonitoringActivity extends Activity  {
 	protected static final String TAG = "MonitoringActivity";
 	private static final int PERMISSION_REQUEST_COARSE_LOCATION = 1;
 
-
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		Log.d(TAG, "onCreate");
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_monitoring);
 		verifyBluetooth();
-        logToDisplay("Application just launched");
+        logToDisplay("Activity just launched");
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             // Android M Permission check
@@ -91,6 +90,12 @@ public class MonitoringActivity extends Activity  {
 		Intent myIntent = new Intent(this, RangingActivity.class);
 		this.startActivity(myIntent);
 	}
+
+	public void onRequestStateClicked(View view) {
+		BeaconManager.getInstanceForApplication(this).requestStateForRegion(
+				BeaconReferenceApplication.BEACON_REGION);
+	}
+
 
     @Override
     public void onResume() {

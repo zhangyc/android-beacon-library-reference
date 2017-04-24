@@ -21,37 +21,41 @@ import org.altbeacon.beacon.startup.BootstrapNotifier;
  */
 public class BeaconReferenceApplication extends Application implements BootstrapNotifier {
     private static final String TAG = "BeaconReferenceApp";
+    public static final Region BEACON_REGION =  new Region("backgroundRegion", null, null, null);
     private RegionBootstrap regionBootstrap;
     private BackgroundPowerSaver backgroundPowerSaver;
     private boolean haveDetectedBeaconsSinceBoot = false;
     private MonitoringActivity monitoringActivity = null;
+    private boolean loggedProcessStatus = false;
 
 
     public void onCreate() {
         super.onCreate();
         BeaconManager beaconManager = org.altbeacon.beacon.BeaconManager.getInstanceForApplication(this);
+        beaconManager.setDebug(true);
+        //beaconManager.setEnableScheduledScanJobs(true);
 
-        // By default the AndroidBeaconLibrary will only find AltBeacons.  If you wish to make it
-        // find a different type of beacon, you must specify the byte layout for that beacon's
-        // advertisement with a line like below.  The example shows how to find a beacon with the
-        // same byte layout as AltBeacon but with a beaconTypeCode of 0xaabb.  To find the proper
-        // layout expression for other beacon types, do a web search for "setBeaconLayout"
-        // including the quotes.
-        //
-        //beaconManager.getBeaconParsers().clear();
-        //beaconManager.getBeaconParsers().add(new BeaconParser().
-        //        setBeaconLayout("m:2-3=beac,i:4-19,i:20-21,i:22-23,p:24-24,d:25-25"));
-
-        Log.d(TAG, "setting up background monitoring for beacons and power saving");
-        // wake up the app when a beacon is seen
-        Region region = new Region("backgroundRegion",
-                null, null, null);
-        regionBootstrap = new RegionBootstrap(this, region);
-
-        // simply constructing this class and holding a reference to it in your custom Application
-        // class will automatically cause the BeaconLibrary to save battery whenever the application
-        // is not visible.  This reduces bluetooth power usage by about 60%
-        backgroundPowerSaver = new BackgroundPowerSaver(this);
+        if (beaconManager.isMainProcess()) {
+            Log.d(TAG, "this is the main process");
+            Log.d(TAG, "setting up background monitoring for beacons and power saving");
+            regionBootstrap = new RegionBootstrap(this, BEACON_REGION);
+            backgroundPowerSaver = new BackgroundPowerSaver(this);
+            // By default the AndroidBeaconLibrary will only find AltBeacons.  If you wish to make it
+            // find a different type of beacon, you must specify the byte layout for that beacon's
+            // advertisement with a line like below.  The example shows how to find a beacon with the
+            // same byte layout as AltBeacon but with a beaconTypeCode of 0xaabb.  To find the proper
+            // layout expression for other beacon types, do a web search for "setBeaconLayout"
+            // including the quotes.
+            //
+            //beaconManager.getBeaconParsers().clear();
+            beaconManager.getBeaconParsers().clear();
+            beaconManager.getBeaconParsers().add(new BeaconParser().
+                    setBeaconLayout("m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24"));
+            beaconManager.applySettings(); // Needed only if scanning process is in separate
+        }
+        else {
+            Log.d(TAG, "this is not the main process.  Not configuring library here");
+        }
 
         // If you wish to test beacon detection in the Android Emulator, you can use code like this:
         // BeaconManager.setBeaconSimulator(new TimedBeaconSimulator() );
@@ -101,7 +105,16 @@ public class BeaconReferenceApplication extends Application implements Bootstrap
     @Override
     public void didDetermineStateForRegion(int state, Region region) {
         if (monitoringActivity != null) {
-            monitoringActivity.logToDisplay("I have just switched from seeing/not seeing beacons: " + state);
+            if (!loggedProcessStatus) {
+                loggedProcessStatus = true;
+                if (!BeaconManager.getInstanceForApplication(this).isScannerInDifferentProcess()) {
+                    monitoringActivity.logToDisplay("Scanner service is running in the same process.");
+                }
+                else {
+                    monitoringActivity.logToDisplay("Scanner service is running in a different process.");
+                }
+            }
+            monitoringActivity.logToDisplay("I have just determined seeing/not seeing beacons state is: " + state);
         }
     }
 
