@@ -100,13 +100,13 @@ public class MonitoringActivity extends Activity  {
     @Override
     public void onResume() {
         super.onResume();
-        ((BeaconReferenceApplication) this.getApplicationContext()).setMonitoringActivity(this);
+        ((BeaconReferenceApplication) this.getApplication()).setMonitoringActivity(this);
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        ((BeaconReferenceApplication) this.getApplicationContext()).setMonitoringActivity(null);
+        ((BeaconReferenceApplication) this.getApplication()).setMonitoringActivity(null);
     }
 
 	private void verifyBluetooth() {

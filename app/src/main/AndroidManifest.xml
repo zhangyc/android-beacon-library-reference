@@ -27,6 +27,7 @@
           in its own process.
         -->
         <!--
+
         <service android:enabled="true"
                  android:exported="false"
                  android:process=":BeaconService"
@@ -35,7 +36,8 @@
                  android:name="org.altbeacon.beacon.service.BeaconService"
                  tools:node="replace"
             />
-            -->
+        -->
+
     </application>
 
 </manifest>

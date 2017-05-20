@@ -6,9 +6,12 @@ import android.app.PendingIntent;
 import android.app.TaskStackBuilder;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
+import android.os.RemoteException;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
+import org.altbeacon.beacon.BeaconConsumer;
 import org.altbeacon.beacon.BeaconManager;
 import org.altbeacon.beacon.BeaconParser;
 import org.altbeacon.beacon.Region;
@@ -28,17 +31,18 @@ public class BeaconReferenceApplication extends Application implements Bootstrap
     private MonitoringActivity monitoringActivity = null;
     private boolean loggedProcessStatus = false;
 
-
     public void onCreate() {
         super.onCreate();
-        BeaconManager beaconManager = org.altbeacon.beacon.BeaconManager.getInstanceForApplication(this);
+        final BeaconManager beaconManager = org.altbeacon.beacon.BeaconManager.getInstanceForApplication(this);
         beaconManager.setDebug(true);
-        //beaconManager.setEnableScheduledScanJobs(true);
 
+        // Checking to see if this is the main process before setting up the BackgroundPowerSaver
+        // and RegionBootstrap is only necessary if you configure the BeaconScanner to run in its
+        // own process in the AndroidManifest.xml
         if (beaconManager.isMainProcess()) {
             Log.d(TAG, "this is the main process");
             Log.d(TAG, "setting up background monitoring for beacons and power saving");
-            regionBootstrap = new RegionBootstrap(this, BEACON_REGION);
+
             backgroundPowerSaver = new BackgroundPowerSaver(this);
             // By default the AndroidBeaconLibrary will only find AltBeacons.  If you wish to make it
             // find a different type of beacon, you must specify the byte layout for that beacon's
@@ -48,10 +52,10 @@ public class BeaconReferenceApplication extends Application implements Bootstrap
             // including the quotes.
             //
             //beaconManager.getBeaconParsers().clear();
-            beaconManager.getBeaconParsers().clear();
-            beaconManager.getBeaconParsers().add(new BeaconParser().
-                    setBeaconLayout("m:2-3=0215,i:4-19,i:20-21,i:22-23,p:24-24"));
+            //beaconManager.getBeaconParsers().add(new BeaconParser().
+            //        setBeaconLayout("m:2-3=beac,i:4-19,i:20-21,i:22-23,p:24-24"));
             beaconManager.applySettings(); // Needed only if scanning process is in separate
+            regionBootstrap = new RegionBootstrap(this, BEACON_REGION);
         }
         else {
             Log.d(TAG, "this is not the main process.  Not configuring library here");
@@ -97,6 +101,7 @@ public class BeaconReferenceApplication extends Application implements Bootstrap
 
     @Override
     public void didExitRegion(Region region) {
+        Log.d(TAG, "did exit region.");
         if (monitoringActivity != null) {
             monitoringActivity.logToDisplay("I no longer see a beacon.");
         }
